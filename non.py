@@ -15,6 +15,12 @@ TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
     raise RuntimeError("BOT_TOKEN belum diatur. Isi nilainya di file .env.")
 
+PORT = int(os.getenv("PORT", "8080"))
+WEBHOOK_BASE_URL = os.getenv("WEBHOOK_URL") or os.getenv("RENDER_EXTERNAL_URL")
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
+if not WEBHOOK_BASE_URL:
+    raise RuntimeError("WEBHOOK_URL belum diatur. Isi URL HTTPS server di environment.")
+
 SERVER_STATUS = "AKTIF"
 ACTIVATION_TIME = "2026-06-06 10:00:00"
 HOURS_LEFT = 24
@@ -96,8 +102,16 @@ def main():
     application = Application.builder().token(TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CallbackQueryHandler(button_handler))
-    print("Bot running...")
-    application.run_polling()
+    webhook_url = f"{WEBHOOK_BASE_URL.rstrip('/')}/telegram"
+    print("Bot webhook running...")
+    application.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        url_path="telegram",
+        webhook_url=webhook_url,
+        secret_token=WEBHOOK_SECRET or None,
+        drop_pending_updates=True,
+    )
 
 
 if __name__ == "__main__":
